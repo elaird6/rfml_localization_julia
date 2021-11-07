@@ -11,24 +11,24 @@
 ###############################################################################
 
 """
-  load_packing_coords(file_location_str, num_locs_IntVec, ratio_float)
+  load\\_packing\\_coords(file\\_location\\_str, num\\_locs\\_IntVec, ratio\\_float)
 
-  Looks at files in <file_locations_st> and finds ones that corresponds to
-  the passed integers in <num_locs>.  Here, assumes that <ratio> is 0.6. 
+  Looks at files in <file\\_locations\\_st> and finds ones that corresponds to
+  the passed integers in <num\\_locs>.  Here, assumes that <ratio> is 0.6. 
   Review https://packomania.com as standard ratios {0.1 : 0.1 : 1.0}.
 
-  file_location_str is string with file location, e.g., "./data/packing/".
+  file\\_location\\_str is string with file location, e.g., "./data/packing/".
   Corresponds to location of files with sphere packing coordinates.
 
-  num_locs_IntVec is vector of integers, e.g., [9, 18, 37]. Corresponds to the
+  num\\_locs\\_IntVec is vector of integers, e.g., [9, 18, 37]. Corresponds to the
   number of spheres that can be packed in rectangular with width:height ratio
-  of <ratio_float>.  Together with <ratio_float>, determines which info is loaded.
+  of <ratio\\_float>.  Together with <ratio\\_float>, determines which info is loaded.
 
-  ratio_float is a float that corresponds to ratio (width:height) of rectangular 
+  ratio\\_float is a float that corresponds to ratio (width:height) of rectangular 
   that encompasses all possible location values
 
   Returns as grouped dataframe with each group (reflected by group label) 
-  corresponding to an integer in the provide <num_locs_IntVec>
+  corresponding to an integer in the provide <num\\_locs\\_IntVec>
 """
 function load_packing_coords(file_location::String, num_locs::Vector{Int64}; ratio::Float64=0.6)
   
@@ -52,31 +52,30 @@ function load_packing_coords(file_location::String, num_locs::Vector{Int64}; rat
   return packing_df
 end
 
-
-function periodic_sampling(num_samples::Integer, num_total::Integer)
 """
-    periodic_sampling(s_int, t_int)
+    periodic\\_sampling(s\\_int, t\\_int)
 
-    Periodically sample the range(1, t_int, step=1) of values and return. Used
+    Periodically sample the range(1, t\\_int, step=1) of values and return. Used
     for generating a periodically sampled index.
 
-    s_int is number of values to sample out of total t_int values
+    s\\_int is number of values to sample out of total t\\_int values
 """
+function periodic_sampling(num_samples::Integer, num_total::Integer)
 
     sample_freq = num_total/num_samples
 
     return round.(Int, sample_freq.*collect(range(1, num_samples, step=1)))
 end
 
-function periodic_sampling(percentage_samples::Float64, num_total::Integer)
 """
-    periodic_sampling(s_float, t_int)
+    periodic\\_sampling(s\\_float, t\\_int)
 
-    Periodically sample the range(1, t_int, step=1) of values and return. Used
+    Periodically sample the range(1, t\\_int, step=1) of values and return. Used
     for generating a periodically sampled index.
 
-    s_float is percentage of total t_int values to sample
+    s\\_float is percentage of total t\\_int values to sample
 """
+function periodic_sampling(percentage_samples::Float64, num_total::Integer)
 
     sample_points = round(Int, percentage_samples*num_total)
     sample_freq   = 1.0/percentage_samples
@@ -84,6 +83,37 @@ function periodic_sampling(percentage_samples::Float64, num_total::Integer)
     return floor.(Int, sample_freq.*collect(range(0, sample_points-1, step=1))).+1
 end
 
+"""
+    periodic\\_sampling(s\\_float, t\\_int, locs\\_dataframe, pack\\_coords\\_dataframe, rand\\_float)
+
+    Periodically sample the available locations based on max packing concept, i.e.,
+    coordinates are chosen that maximums radius between sampled locations.  Assumes
+    that locs\\_dataframe is all the possible sampled locations within a rectangular
+    area.  pack\\_coords are the coordinates for maximum packing given in normalized
+    units, see http://packomania.com/.
+
+    s\\_float is percentage of total t\\_int values to sample.
+
+    locs is assumed to be Nx2 dataframe with header names [:x, :y]
+
+    pack\\_coords is assumped to be a grouped dataframe.  Each group is based on
+    number of coords, e.g., groups 9, 18, 35, 71.
+
+    rand\\_float sets the maximum uniformly distributed random offset. This parameter
+    is used to address possibility that chosen packing location is a particularly
+    bad set of measurements
+
+    Packing coordinates..
+    - fill a rectangulare that is centered on 0,0.
+    - x\\_dimension is normalized to 1
+    - y\\_dimension is normalized (and assumed less than x\\_dimension)
+
+    Therefore packing coords need to be scaled to rectangular area of the sampled
+    locations.  Then find closest sampled location to each scaled packing coords.
+    Return the index for these locations.
+
+    See http://packomania.com/
+"""
 function periodic_sampling(
         percentage_samples::Float64,
         num_total::Integer,
@@ -91,37 +121,8 @@ function periodic_sampling(
         pack_locs_in::GroupedDataFrame{DataFrames.DataFrame};
         #optional paramters
         rand_float::Float64=0.0)
-    """
-    periodic_sampling(s_float, t_int, locs_dataframe, pack_coords_dataframe, rand_float)
 
-    Periodically sample the available locations based on max packing concept, i.e.,
-    coordinates are chosen that maximums radius between sampled locations.  Assumes
-    that locs_dataframe is all the possible sampled locations within a rectangular
-    area.  pack_coords are the coordinates for maximum packing given in normalized
-    units, see http://packomania.com/.
 
-    s_float is percentage of total t_int values to sample.
-
-    locs is assumed to be Nx2 dataframe with header names [:x, :y]
-
-    pack_coords is assumped to be a grouped dataframe.  Each group is based on
-    number of coords, e.g., groups 9, 18, 35, 71.
-
-    rand_float sets the maximum uniformly distributed random offset. This parameter
-    is used to address possibility that chosen packing location is a particularly
-    bad set of measurements
-
-    Packing coordinates..
-    - fill a rectangulare that is centered on 0,0.
-    - x_dimension is normalized to 1
-    - y_dimension is normalized (and assumed less than x_dimension)
-
-    Therefore packing coords need to be scaled to rectangular area of the sampled
-    locations.  Then find closest sampled location to each scaled packing coords.
-    Return the index for these locations.
-
-    See http://packomania.com/
-    """
     #how many indices?
     sample_points = round(Int, percentage_samples*num_total)
     #check that pack_locs has appropriate size group
@@ -177,8 +178,37 @@ function periodic_sampling(
     return sampling_idx
 end;
 
+"""
+    periodic\\_sampling(s\\_int, t\\_int, locs\\_dataframe, pack\\_coords\\_dataframe, rand\\_float)
 
+    Periodically sample the available locations based on max packing concept, i.e.,
+    coordinates are chosen that maximums radius between sampled locations.  Assumes
+    that locs\\_dataframe is all the possible sampled locations within a rectangular
+    area.  pack\\_coords are the coordinates for maximum packing given in normalized
+    units, see http://packomania.com/.
 
+    s\\_int is number of values to sample. t\\_int is used to bound-check (s\\_int < t\\_int)
+
+    locs is assumed to be Nx2 dataframe with header names [:x, :y]
+
+    pack\\_coords is assumped to be a grouped dataframe.  Each group is based on
+    number of coords, e.g., groups 9, 18, 35, 71.
+
+    rand\\_float sets the maximum uniformly distributed random offset. This parameter
+    is used to address possibility that chosen packing location is a particularly
+    bad set of measurements
+
+    Packing coordinates..
+    - fill a rectangulare that is centered on 0,0.
+    - x\\_dimension is normalized to 1
+    - y\\_dimension is normalized (and assumed less than x\\_dimension)
+
+    Therefore packing coords need to be scaled to rectangular area of the sampled
+    locations.  Then find closest sampled location to each scaled packing coords.
+    Return the index for these locations.
+
+    See http://packomania.com/
+"""
 function periodic_sampling(
         sample_points::Integer,
         num_total::Integer,
@@ -186,37 +216,8 @@ function periodic_sampling(
         pack_locs_in::GroupedDataFrame{DataFrames.DataFrame};
         #optional paramters
         rand_float::Float64=0.0)
-    """
-    periodic_sampling(s_int, t_int, locs_dataframe, pack_coords_dataframe, rand_float)
 
-    Periodically sample the available locations based on max packing concept, i.e.,
-    coordinates are chosen that maximums radius between sampled locations.  Assumes
-    that locs_dataframe is all the possible sampled locations within a rectangular
-    area.  pack_coords are the coordinates for maximum packing given in normalized
-    units, see http://packomania.com/.
 
-    s_int is number of values to sample. t_int is used to bound-check (s_int < t_int)
-
-    locs is assumed to be Nx2 dataframe with header names [:x, :y]
-
-    pack_coords is assumped to be a grouped dataframe.  Each group is based on
-    number of coords, e.g., groups 9, 18, 35, 71.
-
-    rand_float sets the maximum uniformly distributed random offset. This parameter
-    is used to address possibility that chosen packing location is a particularly
-    bad set of measurements
-
-    Packing coordinates..
-    - fill a rectangulare that is centered on 0,0.
-    - x_dimension is normalized to 1
-    - y_dimension is normalized (and assumed less than x_dimension)
-
-    Therefore packing coords need to be scaled to rectangular area of the sampled
-    locations.  Then find closest sampled location to each scaled packing coords.
-    Return the index for these locations.
-
-    See http://packomania.com/
-    """
     #how many indices?
     if sample_points > num_total 
       error("num_samples ("*string(sample_points)*") is greater than sample size ("*string(num_total)*")")

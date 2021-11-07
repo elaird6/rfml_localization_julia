@@ -1,13 +1,10 @@
 # Kernel-based Localization Project
 
-This repo utilizes standard and quasi-norm kernel-based fusion of heterogeneous data measurements followed by regession method of choice.
-It has been shown the use of the quasi-$p$-norm, $p<1$, as a similarity measure, results in improved performance over the standard $p$-norm.
-Additionally, the use of multiple kernels, one for each data measurement type --- e.g., time-difference of arrival, received signal strength, and angle of arrival for localization--- further improved performance in comparison to a single kernel.
+This Julia repo utilizes standard and quasi-norm kernel-based fusion of heterogeneous data measurements followed by regession method of choice. It has been shown the use of the quasi-$p$-norm, $p<1$, as a similarity measure, results in improved performance over the standard $p$-norm. Additionally, the use of multiple kernels, one for each data measurement type --- e.g., time-difference of arrival, received signal strength, and angle of arrival for localization--- further improved performance in comparison to a single kernel. Data used in example below can be found in the UCI Machine Learning Repository: []().  Please reference (and cite!) the following paper for specific application:
 
-Repo leverages and builds on [MLJ.jl](https://alan-turing-institute.github.io/MLJ.jl/dev/)
-extensively.  There are two ML model constructs with one focused on single
-kernel and the second one focused on multi-kernel.  Creation of kernels
-leverages [KernelFunctions.jl](https://juliagaussianprocesses.github.io/KernelFunctions.jl/stable/).  If utilize optimal spacing (circle packing) in sampling function, requires pulling files from packomania.com
+Laird, E.B.; Tran, T. (2021). Quasi-norm Kernel-based Emitter Localization. Paper presented at 55th Annual Asilomar Conference on Signals, Systems, and Computers, 2021, Pacific Grove, CA, United States.
+
+Repo leverages and builds on [MLJ.jl](https://alan-turing-institute.github.io/MLJ.jl/dev/) extensively. There are two ML model constructs with one focused on single kernel and the second one focused on multi-kernel. Creation of kernels leverages [KernelFunctions.jl](https://juliagaussianprocesses.github.io/KernelFunctions.jl/stable/). If utilize optimal spacing (circle packing) in sampling function, requires pulling files from packomania.com
 
 ## Example Usage
 
@@ -31,7 +28,7 @@ Read in data and format appropriately
 
 ```
   #files for input 
-  base_name = "data/20201116_Xpd"  #pickled panda file to load with measurements and associated parameters
+  base_name = "data/JHU_fingerprints"  #CSV file to load with measurements and associated parameters
   data_file = base_name*".csv"
 
   #load data
@@ -135,6 +132,11 @@ measurements are kernelized independently. In the code below, "y_df" and
 "X_df" are dataframes. The former is cartesian location information (x, y) and
 the latter has a set of measurements {TDoA, RSS, AoA} associated with each location.  Data is
 kernelized and then regressed to estimate location.
+
+Note the example below is constructed as if there are two sets of measurements
+(or feature types) hence two values of 'p', 'lambda_kern', and in the feature
+count array (f_count) which declares the number of features for each
+feature/measurement type.  
 
 ```
   t_start=now()

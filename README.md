@@ -36,8 +36,6 @@ Read in data and format appropriately
 
   #pull out tdoa, rss and aoa measurements
   X_df=D_orig[:,r"tdoa|rss|aoa"]
-  #get aoa columns, convert to radians
-  for col=names(X_df[:,r"aoa"]) X_df[!, col]=angle.(X_df[:, col]); end
   #get positions
   y_df=D_orig[:,r"x|y"]
   #y_tb=Tables.rowtable(y_df);

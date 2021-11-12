@@ -99,9 +99,13 @@ end
     pack\\_coords is assumped to be a grouped dataframe.  Each group is based on
     number of coords, e.g., groups 9, 18, 35, 71.
 
-    rand\\_float sets the maximum uniformly distributed random offset. This parameter
+    rand\\_float (default=0.0) sets the maximum uniformly distributed random offset. This parameter
     is used to address possibility that chosen packing location is a particularly
-    bad set of measurements
+    bad set of measurements.
+
+    group\\_flag (default=false) grabs all values within rand\\_float dimensional offset
+    of a given packing location.  This essentially identifies and selects a sampled 
+    locations within a given radius (rand\\_flag*sqrt(2)) of packing location.
 
     Packing coordinates..
     - fill a rectangulare that is centered on 0,0.
@@ -110,6 +114,10 @@ end
 
     Therefore packing coords need to be scaled to rectangular area of the sampled
     locations.  Then find closest sampled location to each scaled packing coords.
+    Note the assumption is sampled area has rectangular shape oriented with axes
+    along x and y dimension.  If rotated off axis then will distort resulting
+    locations.
+
     Return the index for these locations.
 
     See http://packomania.com/
@@ -119,8 +127,9 @@ function periodic_sampling(
         num_total::Integer,
         locs::DataFrames.DataFrame,
         pack_locs_in::GroupedDataFrame{DataFrames.DataFrame};
-        #optional paramters
-        rand_float::Float64=0.0)
+        #optional parameters
+        rand_float::Float64=0.0, 
+        group_flag::Bool=false)
 
 
     #how many indices?
@@ -151,8 +160,14 @@ function periodic_sampling(
         rename!(pack_locs, :x=>:y, :y=>:x)
         scale_width = y_width
     end
-    transform!(pack_locs, :x => (x-> x.*scale_width.+x_center.+(rand_float.*(2.0.*rand(sample_points).-1.0))) => :x)
-    transform!(pack_locs, :y => (y-> y.*scale_width.+y_center.+(rand_float.*(2.0.*rand(sample_points).-1.0))) => :y)
+
+    if group_flag # if true, get transformed location with no offset
+      transform!(pack_locs, :x => (x-> x.*scale_width.+x_center) => :x)
+      transform!(pack_locs, :y => (y-> y.*scale_width.+y_center) => :y)
+    else          # if false, get transformed location with random offset
+      transform!(pack_locs, :x => (x-> x.*scale_width.+x_center.+(rand_float.*(2.0.*rand(sample_points).-1.0))) => :x)
+      transform!(pack_locs, :y => (y-> y.*scale_width.+y_center.+(rand_float.*(2.0.*rand(sample_points).-1.0))) => :y)
+    end
 
 
     #now find the closest sampled location to each packing location
@@ -165,15 +180,30 @@ function periodic_sampling(
         #inner loop over all possible sample locations
         for idx_locs in range(1, num_total, step=1)
             temp_dist = norm(temp_pack - Vector(locs[idx_locs, [:x, :y]]))
-            #get new index if distance is smaller
+
+            #get single location or grouping of locs around packing locs?
             if temp_dist < min_dist
-                min_dist = temp_dist
-                min_idx = idx_locs
+              min_dist = temp_dist
+              min_idx = idx_locs
             end
         end
-        #save sampling idx
-        push!(sampling_idx, min_idx)
-    end
+
+        #now that found closest training sample to packed location
+        #search over traiing samples again to group if flag is set
+        if group_flag
+          #search over all training samples 
+          for idx_locs in range(1, num_total, step=1)
+            temp_dist = norm(Vector(locs[min_idx,[:x, :y]]) - Vector(locs[idx_locs, [:x, :y]]))
+
+            if temp_dist < sqrt(2)*rand_float
+              push!(sampling_idx, idx_locs)
+            end
+          end #idx_locs loop
+        #else simply save sampling idx
+        else
+          push!(sampling_idx, min_idx)
+        end #group_flag loop
+    end #idx_pack loop
 
     return sampling_idx
 end;
@@ -214,7 +244,7 @@ function periodic_sampling(
         num_total::Integer,
         locs::DataFrames.DataFrame,
         pack_locs_in::GroupedDataFrame{DataFrames.DataFrame};
-        #optional paramters
+        #optional parameters
         rand_float::Float64=0.0)
 
 
